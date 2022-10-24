@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    username: root
+    password: 8.314Destino!
+    url: jdbc:mysql://localhost:3306/jeep
+    
+logging:
+  level:
+    root: warn
+    '[com.promineo.jeep]': debug
+    
