@@ -8,11 +8,11 @@ import lombok.Getter;
 
 public class BaseTest {
     @LocalServerPort
-    private int serverPort; 
+    public int serverPort; 
     
     @Autowired
     @Getter
-    private TestRestTemplate restTemplate;
+    public TestRestTemplate restTemplate;
     
     
     protected String getBaseURI() {
