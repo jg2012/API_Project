@@ -2,6 +2,8 @@ package com.promineo.jeep.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
+import java.util.Map;
+
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,6 +71,42 @@ import com.promineo.jeep.entity.JeepModel;
 		assertThat(actual).isEqualTo(expected);
 	}
     
+    
+    
+    @Test
+	void testThatAnErrorMessageisReturnedWhenAnInvalidTrimIsSupplied() {
+
+		// Given : a valid model, trim, and URI
+		JeepModel model = JeepModel.WRANGLER;
+		String trim = "Invalid Value";
+		String uri = String.format("http://localhost:%d/jeeps?model=%s&trim=%s", serverPort, model, trim);
+		
+
+		// When : a connection is "made to the URI
+
+		ResponseEntity<Map<String,Object>> response = restTemplate.exchange(uri, HttpMethod.GET, null,
+				new ParameterizedTypeReference<>() {});
+
+		// Then : a not found (4040 status cod is returned 
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+
+		// And: an error message is returned
+		Map<String, Object> error = response.getBody(); 
+		
+		//@formatter:off
+		assertThat(error)
+			.containsKey("message")
+			.containsEntry("status code", HttpStatus.NOT_FOUND.value())
+			.containsEntry("uri", "/jeeps")
+			.containsKey("timestamp")
+			.containsEntry("reason", HttpStatus.NOT_FOUND.getReasonPhrase());
+		//@formatter:on
+	}
+
+
+
     }
+    
+
     
  
