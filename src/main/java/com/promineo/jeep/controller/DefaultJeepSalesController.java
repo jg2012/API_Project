@@ -1,10 +1,11 @@
- package com.promineo.jeep.controller;
+   package com.promineo.jeep.controller;
 
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.promineo.jeep.dao.JeepSalesDao;
 import com.promineo.jeep.entity.Jeep;
 import com.promineo.jeep.entity.JeepModel;
 import com.promineo.jeep.service.JeepSalesService;
@@ -18,10 +19,13 @@ public class DefaultJeepSalesController implements JeepSalesController {
     @Autowired
     private JeepSalesService jeepSalesService; 
     
+    @Autowired
+    private JeepSalesDao jeepSalesDao; 
     
     @Override
     public List<Jeep> fetchJeeps(JeepModel model, String trim) {
 	log.debug("model={}, trim={}", model, trim); 
+	
 	return jeepSalesService.fetchJeeps(model, trim);
     }
 

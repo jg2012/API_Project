@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:jeep
+    url: jdbc:h2:mem:jeep;mode=MYSQL
 
 
 logging:

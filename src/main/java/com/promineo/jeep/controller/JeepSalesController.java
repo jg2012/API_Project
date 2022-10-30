@@ -23,13 +23,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @RequestMapping("/jeeps")
 @OpenAPIDefinition(info = @Info(title = "Jeep Sales Service"), servers = {
-@Server(url = "http://localhost:8080", description = "local server.")})
+@Server(url = "http://localhost:8080", description = "Local server.")})
 
 public interface JeepSalesController {
     //@formatter:off
     @Operation(
 	    summary = "Returns a list of Jeeps",
-	    description = "REturns a list of Jeeps given an otpoinal model and/or trim",
+	    description = "Returns a list of Jeeps given an otpoinal model and/or trim",
 	    responses = {
 		 @ApiResponse(
 			 responseCode = "200", 
@@ -64,13 +64,15 @@ public interface JeepSalesController {
 	    
 	    
     )
-    
+     
     
     @GetMapping
     @ResponseStatus(code = HttpStatus.OK)
     List<Jeep> fetchJeeps(
-	@RequestParam JeepModel model, 
-        @RequestParam String trim);
+	@RequestParam (required = false)
+	JeepModel model, 
+        @RequestParam (required = false)
+        String trim);
 
     
     //@formatter:on
