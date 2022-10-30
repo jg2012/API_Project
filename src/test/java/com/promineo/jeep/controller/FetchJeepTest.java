@@ -3,9 +3,14 @@ package com.promineo.jeep.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.rsocket.context.LocalRSocketServerPort;
@@ -23,6 +28,8 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlConfig;
 import org.springframework.test.jdbc.JdbcTestUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.promineo.jeep.Constants;
 import com.promineo.jeep.controller.support.FetchJeepTestSupport;
 import com.promineo.jeep.entity.Jeep;
 import com.promineo.jeep.entity.JeepModel;
@@ -74,11 +81,11 @@ import com.promineo.jeep.entity.JeepModel;
     
     
     @Test
-	void testThatAnErrorMessageisReturnedWhenAnInvalidTrimIsSupplied() {
+	void testThatAnErrorMessageisReturnedWhenAnUnkownTrimIsSupplied() {
 
 		// Given : a valid model, trim, and URI
 		JeepModel model = JeepModel.WRANGLER;
-		String trim = "Invalid Value";
+		String trim = "Unknown Value";
 		String uri = String.format("http://localhost:%d/jeeps?model=%s&trim=%s", serverPort, model, trim);
 		
 
@@ -93,18 +100,47 @@ import com.promineo.jeep.entity.JeepModel;
 		// And: an error message is returned
 		Map<String, Object> error = response.getBody(); 
 		
-		//@formatter:off
-		assertThat(error)
-			.containsKey("message")
-			.containsEntry("status code", HttpStatus.NOT_FOUND.value())
-			.containsEntry("uri", "/jeeps")
-			.containsKey("timestamp")
-			.containsEntry("reason", HttpStatus.NOT_FOUND.getReasonPhrase());
-		//@formatter:on
+		assertErrorMessageValid(error, HttpStatus.NOT_FOUND);
 	}
 
+    
+    @ParameterizedTest
+    @MethodSource("com.promineo.jeep.controller.FetchJeepTest#parametersForInvalidInput")
+   	void testThatAnErrorMessageisReturnedWhenAnInvalidValueIsSupplied(
+   		String model, String trim, String reason) {
+
+   		// Given : a valid model, trim, and URI
+   		String uri = String.format("http://localhost:%d/jeeps?model=%s&trim=%s", serverPort, model, trim);
+   		
+
+   		// When : a connection is "made to the URI
+   		ResponseEntity<Map<String,Object>> response = restTemplate.exchange(uri, HttpMethod.GET, null,
+   				new ParameterizedTypeReference<>() {});
+
+   		// Then : a not found (4040 status cod is returned 
+   		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+
+   		// And: an error message is returned
+   		Map<String, Object> error = response.getBody(); 
+   		
+   		assertErrorMessageValid(error, HttpStatus.BAD_REQUEST);
+   	}
+
+    
+     static Stream<Arguments> parametersForInvalidInput(){
+	 //@formatter:off
+	 return Stream.of(
+		arguments("WRANGLER", "@#$$^&&%", "Trim continas non-alpha-numeric characters"),
+		arguments("WRANGLER","C".repeat(Constants.TRIM_MAX_LENGTH + 1), "Trim length too long"), 
+		arguments("INVALID", "Sport", "Model is not enum value")
+		 ); 
+	 //@formatter:on
+     }
 
 
+
+    
+    
     }
     
 
