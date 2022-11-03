@@ -2,6 +2,8 @@ package com.promineo.jeep.controller;
 
 import java.util.List;
 
+import javax.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -65,7 +67,7 @@ public interface JeepOrderController {
     
     @PostMapping
     @ResponseStatus(code = HttpStatus.CREATED)
-    Order createOrder(@RequestBody OrderRequest orderRequest);
+    Order createOrder(@Valid @RequestBody OrderRequest orderRequest);
  
 }
 
