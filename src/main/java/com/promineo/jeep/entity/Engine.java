@@ -1,4 +1,4 @@
-package com.promineotech.jeep.entity;
+package com.promineo.jeep.entity;
 
 import java.math.BigDecimal;
 import lombok.Builder;
