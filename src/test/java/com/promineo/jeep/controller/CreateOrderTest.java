@@ -59,7 +59,6 @@ class CreateOrderTest extends CreateOrderTestSupport {
 	assertThat(order.getTire().getTireId()).isEqualTo("35_TOYO");
 	assertThat(order.getOption()).hasSize(6); 
 	
-	//Stopped at 13:48
     }
 }
 
