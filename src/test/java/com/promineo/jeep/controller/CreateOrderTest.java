@@ -50,7 +50,7 @@ class CreateOrderTest extends CreateOrderTestSupport {
 	assertThat(response.getBody()).isNotNull(); 
 	
 	Order order = response.getBody(); 
-	assertThat(order.getCustomer().getCustomerId()).isEqualTo("Morison_Lina"); 
+	assertThat(order.getCustomer().getCustomerId()).isEqualTo("MORISON_LINA"); 
 	assertThat(order.getModel().getModelId()).isEqualTo(JeepModel.WRANGLER); 
 	assertThat(order.getModel().getTrimLevel()).isEqualTo("Sport Altitude"); 
 	assertThat(order.getModel().getNumDoors()).isEqualTo(4); 

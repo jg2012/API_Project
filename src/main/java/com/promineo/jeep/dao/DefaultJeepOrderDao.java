@@ -13,9 +13,13 @@ import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
 
 import com.promineo.jeep.entity.Color;
@@ -41,58 +45,129 @@ public class DefaultJeepOrderDao implements JeepOrderDao {
     
     
     @Override
-	public Order saveOrder(Customer customer, Jeep jeep, Color color, Engine engine, Tire tire, BigDecimal price, List<Option> options) {
-		return null; 
+	public Order saveOrder(Customer customer, Jeep jeep, Color color
+		, Engine engine, Tire tire, BigDecimal price, List<Option> options) {
+		
+	SqlParams params = generateInsertSql(customer, jeep, color, engine, tire, price); 
+
+	KeyHolder keyHolder = new GeneratedKeyHolder(); 
+	jdbcTemplate.update(params.sql, params.source, keyHolder); 
+	
+	Long orderPK = keyHolder.getKey().longValue();
+	saveOptions(options, orderPK); 
+	
+	//@formatter:off
+	return Order.builder()
+		.orderPK(orderPK)
+		.customer(customer)		
+		.model(jeep)
+		.color(color)
+		.engine(engine)
+		.tire(tire)
+		.option(options)
+		.price(price)		
+		.build(); 
+	
+	//@formatter:on 
+    }
+	private void saveOptions(List<Option> options, Long orderPK) {
+	    for(Option option : options) {
+		SqlParams params = generateInsertSql(option, orderPK); 
+		jdbcTemplate.update(params.sql, params.source); 
+	    }
+    }
+	private SqlParams generateInsertSql(Option option, Long orderPK) {
+	    SqlParams params = new SqlParams();
+	    
+	    // @formatter:off
+	    params.sql = ""
+	        + "INSERT INTO order_options ("
+	        + "option_fk, order_fk"
+	        + ") VALUES ("
+	        + ":option_fk, :order_fk"
+	        + ")";
+	    // @formatter:on
+	    
+
+	    params.source.addValue("option_fk", option.getOptionPK());
+	    params.source.addValue("order_fk", orderPK);
+	    
+	    return params;
+	  }
+
+	private SqlParams generateInsertSql(Customer customer, Jeep jeep, Color color, Engine engine, Tire tire,
+	    BigDecimal price) {
+	    //@formatter:off
+	    String sql = ""
+		    + "INSERT INTO orders ("
+		    + "customer_fk, color_fk, engine_fk, tire_fk, model_fk, price"
+		    + ") VALUES ("
+		    + ":customer_fk, :color_fk, :engine_fk, :tire_fk, :model_fk, :price"
+		    + ")"; 
+	    //@formatter:on
+	    
+	  SqlParams params = new SqlParams();
+	  
+	  params.sql = sql;
+	  params.source.addValue("customer_fk", customer.getCustomerPK()); 
+	  params.source.addValue("color_fk", color.getColorPK()); 
+	  params.source.addValue("engine_fk", engine.getEnginePK());
+	  params.source.addValue("tire_fk", tire.getTirePK());
+	  params.source.addValue("model_fk", jeep.getModelPK()); 
+	  params.source.addValue("price", price); 
+	  
+	  return params; 
     }
 	@Override
 	public List<Option> fetchOptions(List<String> optionIds) {
-
-	     if(optionIds.isEmpty()){
-		return new LinkedList<>();
+	    if (optionIds.isEmpty()) {
+	      return new LinkedList<>();
 	    }
-	    
-	   Map<String, Object> params = new HashMap<>();  
-	    
+
+	    Map<String, Object> params = new HashMap<>();
+
+	    // @formatter:off
 	    String sql = ""
-		    + "SELECT * "
-		    + "FROM  options"
-		    + "WHERE option_id IN("; 
-	    
-	    
-	    for(int index = 0; index < optionIds.size(); index++) {
-		String key = ": option_"  + index; 
-		sql += ":" +  ", "; 
-		params.put(key, optionIds.get(index)); 
+	        + "SELECT * "
+	        + "FROM options "
+	        + "WHERE option_id IN(";
+	    // @formatter:on
+
+	    for (int index = 0; index < optionIds.size(); index++) {
+	      String key = "option_" + index;
+	      sql += ":" + key + ", ";
+	      params.put(key, optionIds.get(index));
 	    }
-	    
-	    sql = sql.substring(0, sql.length()-2); 
-	    sql += ")"; 
-	    
-	    return jdbcTemplate.query(sql, params,  new RowMapper<Option>() {
 
-		@Override
-		public Option mapRow(ResultSet rs, int rowNum) throws SQLException {
-		    return Option.builder()
-			    .category(OptionType.valueOf(rs.getString("category")))
-			    .manufacturer(rs.getString("manufacturer"))
-			    .name(rs.getString("name"))
-			    .optionId(rs.getString("option_id"))
-			    .optionPK(rs.getLong("option_pk"))
-			    .price(rs.getBigDecimal("price"))
-			    .build();
-		}
+	    sql = sql.substring(0, sql.length() - 2);
+	    sql += ")";
+
+	    return jdbcTemplate.query(sql, params, new RowMapper<Option>() {
+	      @Override
+	      public Option mapRow(ResultSet rs, int rowNum) throws SQLException {
+	        // @formatter:off
+	        return Option.builder()
+	            .category(OptionType.valueOf(rs.getString("category")))
+	            .manufacturer(rs.getString("manufacturer"))
+	            .name(rs.getString("name"))
+	            .optionId(rs.getString("option_id"))
+	            .optionPK(rs.getLong("option_pk"))
+	            .price(rs.getBigDecimal("price"))
+	            .build();
+	        // @formatter:on
+	      }
 	    });
-	
-	
+	  }
 
-	}
     
     @Override
     public Optional<Customer> fetchCustomer(String customerId) {
+	//@formatter:off
     	String sql = ""
     		+ "SELECT * "
     		+ "FROM  customers "
     		+ "WHERE customer_id = :customer_id"; 
+    	//@formatter:on
     	
     	Map<String, Object> params = new HashMap<>(); 
     	params.put("customer_id", customerId); 
@@ -110,7 +185,7 @@ public class DefaultJeepOrderDao implements JeepOrderDao {
 	 
 	 //@formatter:off 
 	 return Customer.builder()
-	 	.customerId(rs.getString("cusomter_id"))
+	 	.customerId(rs.getString("customer_id"))
 	 	.customerPK(rs.getLong("customer_pk"))
 	 	.firstName(rs.getString("first_name"))
 	 	.lastName(rs.getString("last_name"))
@@ -309,5 +384,8 @@ public class DefaultJeepOrderDao implements JeepOrderDao {
 
 
 	  }
-
+	  class SqlParams{
+	      String sql; 
+	      MapSqlParameterSource source = new MapSqlParameterSource(); 
+	  }
 }
